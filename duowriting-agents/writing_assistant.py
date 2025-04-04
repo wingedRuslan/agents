@@ -1,8 +1,9 @@
 import os
 from typing import Dict, Any, Optional
-from autogen import ConversableAgent
+from autogen import ConversableAgent, register_function
 
 from prompts import WRITER_SYSTEM_PROMPT, CRITIQUE_SYSTEM_MESSAGE
+from tools import google_search
 
 
 class WritingAssistant:
@@ -45,8 +46,16 @@ class WritingAssistant:
             max_consecutive_auto_reply=1,
             is_termination_msg=lambda msg: "approved" in str(msg.get("content", "")).lower()
         )
-
-
+        
+        # Register the Google search tool with agents
+        register_function(
+            google_search,
+            caller=self.writer,      # The writer can suggest calls to the google search
+            executor=self.critique,  # The critique can execute the google search calls.
+            name="google_search",
+            description="Search for information on Google to get up-to-date facts and data",
+        )
+    
     def generate(self, writing_task: str, requirements: str) -> str:
         """
         Generate content based on the task and requirements.
@@ -93,8 +102,11 @@ if __name__ == "__main__":
         ]
     }
     
-    task = "Write an official email to a client asking for the presentation deck discussed in the meeting."
-    requirements = "The email should be short, clear, and straight to the point."
+    # task = "Write an official email to a manager asking for the presentation deck discussed in the meeting."
+    # requirements = "The email should be short, clear, and straight to the point."
+
+    task = "Write a brief update on the latest developments in AI"
+    requirements = "The content should be factual, mention recent advancements within the last 6 months, and be understandable to a general audience."
 
     assistant = WritingAssistant(llm_config)
     final_content = assistant.generate(task, requirements)
